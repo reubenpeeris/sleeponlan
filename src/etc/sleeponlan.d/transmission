@@ -1,0 +1,2 @@
+#!/bin/bash
+exit $(transmission-remote -l | tail -n +2 | head -n -1 | cut -b 58-70 | sort | grep -vs 'Finished\|Stopped' | wc -l)

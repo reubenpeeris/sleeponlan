@@ -1,0 +1,58 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          sleeponlan
+# Required-Start:    $network $local_fs $time
+# Required-Stop:     $network $local_fs $time
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: sleeponlan
+# Description:       sleeponlan
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+pidfile=/var/run/sleeponlan.pid
+sleeponlan=/usr/sbin/sleeponlan
+
+case "$1" in
+	start)
+		log_daemon_msg "Starting sleeponlan"
+		if [ -f "$pidfile" ]; then
+			log_failure_msg "Appears to already be running, if not remove $pidfile"
+			exit 4
+		fi
+
+		if ! start-stop-daemon --start --background -m --pidfile "$pidfile" -x "$sleeponlan"; then
+			log_end_msg 2
+			exit 2
+		fi
+
+		log_end_msg 0
+		;;
+	stop)
+		log_daemon_msg "Stopping sleeponlan"
+
+		if [ -f "$pidfile" ]; then
+			start-stop-daemon --stop --quiet --pidfile "$pidfile"
+			status=$?
+			rm "$pidfile"
+			
+			if [ $status != 0 ]; then
+				log_end_msg 3
+				exit 3
+			fi
+		fi
+
+		log_end_msg 0
+		;;
+	restart|force-reload)
+		$0 stop && $0 start
+		;;
+	*)
+		echo "Usage: /etc/init.d/sleeponlan {start|stop|restart}"
+		exit 1
+		;;
+esac
+
+exit 0

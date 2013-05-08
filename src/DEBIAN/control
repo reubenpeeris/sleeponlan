@@ -1,0 +1,9 @@
+Package: sleeponlan
+Version: 0.9
+Section: utils
+Priority: extra
+Architecture: all
+Depends: lsb-base, dpkg, bash, pm-utils
+Suggests: transmission-cli
+Maintainer: Reuben Peeris <reubenpeeris@gmail.com>
+Description: Automatically puts the machine to sleep when there are no active logins and the network trafic drops below a specified level. Useful for NAS machines that support wake on LAN.

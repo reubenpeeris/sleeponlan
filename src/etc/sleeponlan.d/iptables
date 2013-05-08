@@ -1,0 +1,27 @@
+#!/bin/bash
+. /usr/share/sleeponlan/persistence
+persist maxidlebytes previous
+
+case "$1" in
+	init)
+		[ -z "$maxidlebytes" ] && maxidlebytes=15000
+		echo maxidlebytes $maxidlebytes
+		previous=0
+		iptables -A INPUT
+		;;
+	checkidle)
+		counts=$(iptables -nvxL | sed -n 's/.* ACCEPT [[:digit:]]\+ packets, \([[:digit:]]\+\) bytes)$/\1/p')
+		current=$((${counts//$'\n'/+}))
+		
+		echo previous $previous
+		echo current $current
+		
+		let interval=$current-$previous
+		echo interval $interval
+		
+		previous=$current
+		if [ $interval -gt $maxidlebytes ]; then
+			exit 1
+		fi;
+		;;
+esac

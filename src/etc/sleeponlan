@@ -1,0 +1,9 @@
+#Number of idle minutes before sleeping
+timeoutmins=10
+
+#Set to 1 to enable logging to /var/log/sleeponlan
+debug=0
+
+#The maximum number of bytes per minute to be considered idle
+iptables_maxidlebytes=20000
+

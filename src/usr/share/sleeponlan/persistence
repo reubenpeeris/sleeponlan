@@ -1,0 +1,88 @@
+#!/bin/bash
+# SOLP - Sleep On Lan Persistence
+#
+# This file can be used to persist data between invocations of a sleeponlan script.
+# Example usage:
+# . /usr/share/sleeponlan/persistence
+# ...
+# myvariale=myvalue
+# persist myvariable
+
+#Registers one or more variables to be persisted
+function persist {
+        for variable in "$@"; do
+                __solp_put "$variable" "${!variable}"
+        done
+}
+
+function load {
+	local file="$1"
+	local this="${0##*/}"
+
+	oldifs="$IFS"
+	IFS=_
+	while read script key value; do
+		[ "" == "$script" ] && script="$this"
+		local folder="$(__solp_folder "$script")"
+		[ -e "$folder" ] || mkdir -p "$folder"
+
+        	__solp_put "$script" "$key" "$value"
+		if [ "$script" == "$this" ]; then
+			eval "$key=\"\$value\""
+		fi
+	done < <(sed -n 's/^\(\([^#][^_=]*\)_\)\?\([^_=]\+\)=/\2_\3_/p' "$file")
+o
+	IFS="$oldifs"
+}
+
+function clear {
+        rm -Rf "$(__solp_folder "$@")"
+}
+
+#Private functions
+function __solp_put {
+        local file_params=("${@:1:(($#-1))}")
+        local value="${!#}"
+
+        echo "$value" > "$(__solp_file "${file_params[@]}")"
+}
+
+function __solp_get {
+        cat "$(__solp_file "$@")"
+}
+
+function __solp_folder {
+        if [ $# == 1 ]; then
+                local script="$1"
+        else
+                local script="${0##*/}"
+        fi
+
+        echo "/dev/shm/sleeponlan/$script"
+}
+
+function __solp_file {
+        local folder=$(__solp_folder "${@:1:(($#-1))}")
+        local key="${!#}"
+        echo "$folder/$key"
+}
+
+function __solp_loadvariables {
+        local folder=$(__solp_folder "$@")
+        [ -e "$folder" ] || mkdir -p "$folder"
+	for variable in $(ls $folder); do
+		eval "$variable=\$(__solp_get $variable)"
+	done
+}
+
+function __solp_flush {
+	for variable in `ls $(__solp_folder)`; do
+                persist "$variable"
+        done
+}
+
+readonly -f __solp_put __solp_get __solp_folder __solp_file __solp_loadvariables __solp_flush persist load
+
+__solp_loadvariables
+trap __solp_flush EXIT
+

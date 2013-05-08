@@ -1,0 +1,70 @@
+#!/bin/bash
+function log() {
+        if [ $debug -ne 0 ]; then
+                echo `date --rfc-3339=seconds` $* >> /var/log/sleeponlan
+        fi
+}
+
+function log_script {
+        local script="$1"
+        while read data
+        do
+                log "-> $script" "$data"
+        done
+}
+
+log Starting sleeponlan
+
+. /usr/share/sleeponlan/persistence
+clear ""
+load /etc/sleeponlan
+
+[ -z "$timeoutmins" ] && timeoutmins=10
+[ -z "$debug" ] && debug=0
+
+log timeoutmins $timeoutmins
+
+log Finding scripts
+scripts=()
+for script in $(ls -d /etc/sleeponlan.d/*); do
+        if [ -x "$script" ]; then
+		log Adding script: $script
+		scripts+=("$script")
+	fi
+done
+
+log init-ing scripts
+for script in "${scripts[@]}"; do
+	log $script init
+        "$script" init 2>&1 | log_script "$script"
+done
+
+idlemins=0
+while true; do
+	log sleeping for a minute
+	sleep 60
+
+	idle=0
+	log Checking if currently idle
+	for script in "${scripts[@]}"; do
+		log $script checkidle
+        	"$script" checkidle 2>&1 | log_script "$script"
+		result=${PIPESTATUS[0]}
+		log returned: $result
+		let idle+=$result
+	done
+
+	if [ $idle == 0 ]; then
+		let idlemins+=1
+		log idlemins $idlemins
+		if [ $idlemins == $timeoutmins ]; then
+			log suspend
+			pm-suspend
+			idlemins=0
+		fi;
+	else
+		idlemins=0
+		log idlemins $idlemins
+	fi;
+done
+

@@ -1,0 +1,2 @@
+#!/bin/bash
+exit $(who -q | sed -n 's/# users=//p')

@@ -1,0 +1,6 @@
+#!/bin/bash
+package=`sed -n 's/^Package: \+//p' src/DEBIAN/control`
+version=`sed -n 's/^Version: \+//p' src/DEBIAN/control`
+architecture=`sed -n 's/^Architecture: \+//p' src/DEBIAN/control`
+
+dpkg-deb --build src "$package-$version-$architecture.deb"

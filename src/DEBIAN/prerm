@@ -1,0 +1,5 @@
+#!/bin/bash
+/etc/init.d/sleeponlan stop
+update-rc.d -f  sleeponlan remove
+[ -f /var/log/sleeponlan ] && rm /var/log/sleeponlan
+exit 0
